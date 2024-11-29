@@ -14,10 +14,6 @@ const pool = new Pool({
 
 app.use(express.json());
 
-// let tasks = [
-//     { id: 1, description: 'Buy groceries', status: 'incomplete' },
-//     { id: 2, description: 'Read a book', status: 'complete' },
-// ];
 
 // Function to create tasks table
 async function createTasksTable() {
@@ -95,19 +91,21 @@ app.put('/tasks/:id', async (request, response) => {
 });
 
 // DELETE /tasks/:id - Delete a task
-app.delete('/tasks/:id', (request, response) => {
+app.delete('/tasks/:id', async (request, response) => {
     const taskId = parseInt(request.params.id, 10);
-    const initialLength = tasks.length;
-    tasks = tasks.filter(t => t.id !== taskId);
 
-    if (tasks.length === initialLength) {
-        return response.status(404).json({ error: 'Task not found' });
+    try {
+        const result = await pool.query(
+            `DELETE FROM tasks WHERE id = $1 RETURNING *`,
+            [taskId]
+        );
+
+        response.json({ message: 'Task deleted successfully' });
     }
-    response.json({ message: 'Task deleted successfully' });
-});
-
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    catch (error) {
+        console.error(error);
+        response.status(500).send('Server error');
+    }
 });
 
 // Initialize database and start server
