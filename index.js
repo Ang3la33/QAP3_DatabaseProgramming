@@ -19,6 +19,25 @@ let tasks = [
     { id: 2, description: 'Read a book', status: 'complete' },
 ];
 
+// Function to create tasks table
+async function createTasksTable() {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS tasks (
+                id SERIAL PRIMARY KEY,
+                description TEXT NOT NULL,
+                status TEXT NOT NULL
+            );
+        `);
+        console.log("Tasks table created successfully.");
+    }
+    catch (error) {
+        console.error("Error creating tasks table: ", error);
+    }
+}
+
+
+
 // GET /tasks - Get all tasks
 app.get('/tasks', (req, res) => {
     res.json(tasks);
