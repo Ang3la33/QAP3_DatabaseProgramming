@@ -49,14 +49,23 @@ app.get('/tasks', async (request, response) => {
 });
 
 // POST /tasks - Add a new task
-app.post('/tasks', (request, response) => {
+app.post('/tasks', async (request, response) => {
     const { id, description, status } = request.body;
-    if (!id || !description || !status) {
-        return response.status(400).json({ error: 'All fields (id, description, status) are required' });
+    if (!description || !status) {
+        return response.status(400).json({ error: 'All fields are required' });
     }
 
-    tasks.push({ id, description, status });
-    response.status(201).json({ message: 'Task added successfully' });
+    try {
+        const result = await pool.query (
+            `INSERT INTO tasks (description, status) VALUES ($1, $2) RETURNING *`,
+            [description, status]
+        );
+        response.status(201).json(result.rows[0]);
+    }
+    catch (error) {
+        console.error(error);
+        response.status(500).send('Server error');
+    }
 });
 
 // PUT /tasks/:id - Update a task's status
