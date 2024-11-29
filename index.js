@@ -46,9 +46,14 @@ app.get('/tasks', async (request, response) => {
 
 // POST /tasks - Add a new task
 app.post('/tasks', async (request, response) => {
-    const { id, description, status } = request.body;
+    const { description, status } = request.body;
+
     if (!description || !status) {
         return response.status(400).json({ error: 'All fields are required' });
+    }
+
+    if (!['incomplete', 'complete'].includes(status)) {
+        return response.status(400).json({ error: 'Invalid status value. Allowed values are "incomplete" or "complete".' });
     }
 
     try {
