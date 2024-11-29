@@ -68,17 +68,28 @@ app.post('/tasks', async (request, response) => {
 app.put('/tasks/:id', async (request, response) => {
     const taskId = parseInt(request.params.id, 10);
     const { status } = request.body;
-    const task = tasks.find(t => t.id === taskId);
 
     try {
+        // Execute SQL query with validation for allowed status values
         const result = await pool.query(
-            `UPDATE tasks SET status = $1 WHERE id = $2 RETURNING *`,
+            `UPDATE tasks
+             SET status = CASE
+                 WHEN $1 IN ('incomplete', 'complete') THEN $1
+                 ELSE status
+             END
+             WHERE id = $2
+             RETURNING *`,
             [status, taskId]
         );
 
         // Check if the task exists
         if (result.rowCount === 0) {
             return response.status(404).json({ error: 'Task not found' });
+        }
+
+        // If task is invalid, respond with error
+        if (result.rows[0].status !== status) {
+            return response.status(400).json({error: 'Invalid status value, must be either "complete" or "incomplete".'});
         }
 
         // Send the updated task as the response
